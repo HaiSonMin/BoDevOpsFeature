@@ -1,6 +1,6 @@
 {
   "name": "bodevops-features",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "BoDevOps features library - utilities for Google Drive, Google Sheets, and iDrive e2",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

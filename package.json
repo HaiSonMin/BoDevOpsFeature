@@ -1,0 +1,48 @@
+{
+  "name": "bodevops-features",
+  "version": "1.0.0",
+  "description": "BoDevOps features library - utilities for Google Drive, Google Sheets, and iDrive e2",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HaiSonMin"
+  },
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c && tsc --emitDeclarationOnly --outDir dist/types",
+    "prepublishOnly": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "gg-drive",
+    "gg-sheet",
+    "idrive-e2"
+  ],
+  "author": "BoDevOps",
+  "license": "MIT",
+  "dependencies": {
+    "googleapis": "^130.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "rollup": "^4.9.6",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3"
+  }
+}

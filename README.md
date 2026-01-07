@@ -336,6 +336,317 @@ await sheetClient.updateValuesMultiRowsByCol({
 
 ---
 
+## Google Sheets Update & Delete Methods - Detailed Guide
+
+### 📝 Understanding `rowOffset`
+
+All update and delete methods support a `rowOffset` parameter to handle different sheet structures:
+
+- **`rowOffset: 0`** (default): Header at row 1, data starts at row 2
+- **`rowOffset: 1`**: Header at row 1, skip row 2, data starts at row 3
+- **`rowOffset: 2`**: Header at row 1, skip rows 2-3, data starts at row 4
+
+**Example Sheet Structure:**
+
+```
+Row 1: [Name, Email, Status]        ← Header
+Row 2: [John, john@example.com, Active]   ← Data row 0 (with rowOffset=0)
+Row 3: [Jane, jane@example.com, Pending]  ← Data row 1 (with rowOffset=0)
+```
+
+---
+
+### 1️⃣ `updateValuesMultiCells()` - Update Specific Cells
+
+Update multiple cells at specific row and column positions.
+
+**Use Case:** Update scattered cells across the sheet
+
+```typescript
+await sheetClient.updateValuesMultiCells({
+  sheetUrl: 'https://docs.google.com/spreadsheets/d/...',
+  sheetName: 'Sheet1',
+  cells: [
+    { row: 0, col: 0, content: 'John Doe' }, // A2
+    { row: 0, col: 2, content: 'Active' }, // C2
+    { row: 1, col: 1, content: 'jane@new.com' }, // B3
+    { row: 5, col: 3, content: 'Updated' }, // D7
+  ],
+  rowOffset: 0, // Optional, default is 0
+});
+```
+
+**Parameters:**
+
+- `cells`: Array of `{ row, col, content }` objects
+  - `row`: 0-based data row index
+  - `col`: 0-based column index (0=A, 1=B, 2=C, ...)
+  - `content`: String value to write
+
+---
+
+### 2️⃣ `updateValuesMultiColsByRow()` - Update Multiple Columns in One Row
+
+Update several columns in a single row.
+
+**Use Case:** Update a complete user record
+
+```typescript
+// Update row 3 (data row index 2) - columns A, B, C
+await sheetClient.updateValuesMultiColsByRow({
+  sheetUrl: 'https://docs.google.com/spreadsheets/d/...',
+  sheetName: 'Users',
+  row: 2, // Data row index (actual sheet row 4 with rowOffset=0)
+  values: [
+    { col: 0, content: 'Updated Name' }, // Column A
+    { col: 1, content: 'new@email.com' }, // Column B
+    { col: 2, content: 'Active' }, // Column C
+    { col: 4, content: '2026-01-07' }, // Column E
+  ],
+  rowOffset: 0,
+});
+```
+
+**Real-world Example:**
+
+```typescript
+// Update user status and last login
+await sheetClient.updateValuesMultiColsByRow({
+  sheetUrl: SHEET_URL,
+  sheetName: 'Users',
+  row: userId,
+  values: [
+    { col: 5, content: 'Online' }, // Status column
+    { col: 6, content: new Date().toISOString() }, // Last login column
+  ],
+});
+```
+
+---
+
+### 3️⃣ `updateValuesMultiRowsByCol()` - Update Multiple Rows in One Column
+
+Update several rows in a single column.
+
+**Use Case:** Batch update status for multiple items
+
+```typescript
+// Update status column (C) for multiple rows
+await sheetClient.updateValuesMultiRowsByCol({
+  sheetUrl: 'https://docs.google.com/spreadsheets/d/...',
+  sheetName: 'Tasks',
+  col: 2, // Column C (0-based)
+  values: [
+    { row: 0, content: 'Completed' },
+    { row: 1, content: 'In Progress' },
+    { row: 2, content: 'Completed' },
+    { row: 5, content: 'Pending' },
+    { row: 8, content: 'Completed' },
+  ],
+  rowOffset: 0,
+});
+```
+
+**Real-world Example:**
+
+```typescript
+// Mark all selected tasks as completed
+const completedTaskIds = [0, 3, 5, 7];
+
+await sheetClient.updateValuesMultiRowsByCol({
+  sheetUrl: SHEET_URL,
+  sheetName: 'Tasks',
+  col: 3, // Status column
+  values: completedTaskIds.map((taskId) => ({
+    row: taskId,
+    content: 'Completed ✓',
+  })),
+});
+```
+
+---
+
+### 4️⃣ `updateValuesMultiRowsMultiCols()` - Batch Update a Range
+
+Update a rectangular range of cells (multiple rows and columns).
+
+**Use Case:** Update a table section or paste data block
+
+```typescript
+// Update a 3x3 range starting at row 0, column 0
+await sheetClient.updateValuesMultiRowsMultiCols({
+  sheetUrl: 'https://docs.google.com/spreadsheets/d/...',
+  sheetName: 'Data',
+  values: [
+    ['A1', 'B1', 'C1'],
+    ['A2', 'B2', 'C2'],
+    ['A3', 'B3', 'C3'],
+  ],
+  startRow: 0, // Start at data row 0 (sheet row 2)
+  startCol: 0, // Start at column A
+  rowOffset: 0,
+});
+```
+
+**Advanced Example with Custom Range:**
+
+```typescript
+// Update columns D-F (indices 3-5) for rows 10-15
+await sheetClient.updateValuesMultiRowsMultiCols({
+  sheetUrl: SHEET_URL,
+  sheetName: 'Report',
+  values: [
+    ['Q1', '1000', '95%'],
+    ['Q2', '1200', '98%'],
+    ['Q3', '1100', '96%'],
+    ['Q4', '1300', '99%'],
+  ],
+  startRow: 10, // Data row 10
+  endRow: 13, // Data row 13 (4 rows total)
+  startCol: 3, // Column D
+  rowOffset: 0,
+});
+```
+
+**Paste Clipboard Data:**
+
+```typescript
+// Paste a copied table from Excel/Sheets
+const clipboardData = [
+  ['Product', 'Price', 'Stock'],
+  ['Item A', '100', '50'],
+  ['Item B', '200', '30'],
+  ['Item C', '150', '40'],
+];
+
+await sheetClient.updateValuesMultiRowsMultiCols({
+  sheetUrl: SHEET_URL,
+  sheetName: 'Inventory',
+  values: clipboardData,
+  startRow: 0,
+  startCol: 0,
+});
+```
+
+---
+
+### 5️⃣ `deleteRowSheet()` - Delete a Row
+
+Delete a specific row from the sheet.
+
+**Use Case:** Remove a record from the sheet
+
+```typescript
+// Delete data row 5 (actual sheet row 7 with rowOffset=0)
+await sheetClient.deleteRowSheet({
+  sheetUrl: 'https://docs.google.com/spreadsheets/d/...',
+  sheetName: 'Users',
+  row: 5, // Data row index
+  rowOffset: 0,
+});
+```
+
+**Real-world Example:**
+
+```typescript
+// Delete user by finding their row first
+const userEmail = 'user@example.com';
+
+// Find the row
+const rowIndex = await sheetClient.getIdxRow({
+  sheetUrl: SHEET_URL,
+  sheetName: 'Users',
+  colName: 'B', // Email column
+  value: userEmail,
+});
+
+if (rowIndex >= 0) {
+  // Delete the row
+  await sheetClient.deleteRowSheet({
+    sheetUrl: SHEET_URL,
+    sheetName: 'Users',
+    row: rowIndex,
+  });
+  console.log(`Deleted user: ${userEmail}`);
+}
+```
+
+**⚠️ Important Notes:**
+
+- Deleting a row shifts all rows below it up by one
+- The row index is 0-based for data rows (excluding header)
+- Cannot be undone - use with caution!
+
+---
+
+### 🎯 Method Selection Guide
+
+| Scenario                            | Recommended Method                 |
+| ----------------------------------- | ---------------------------------- |
+| Update 1-2 specific cells           | `updateValuesMultiCells()`         |
+| Update entire user record (one row) | `updateValuesMultiColsByRow()`     |
+| Batch update status column          | `updateValuesMultiRowsByCol()`     |
+| Update a table section/range        | `updateValuesMultiRowsMultiCols()` |
+| Remove a record                     | `deleteRowSheet()`                 |
+
+---
+
+### 💡 Pro Tips
+
+**1. Batch Operations for Performance:**
+
+```typescript
+// ❌ Bad: Multiple individual updates
+for (const item of items) {
+  await sheetClient.updateValuesMultiCells({
+    sheetUrl: SHEET_URL,
+    sheetName: 'Data',
+    cells: [{ row: item.id, col: 2, content: item.status }],
+  });
+}
+
+// ✅ Good: Single batch update
+await sheetClient.updateValuesMultiRowsByCol({
+  sheetUrl: SHEET_URL,
+  sheetName: 'Data',
+  col: 2,
+  values: items.map((item) => ({ row: item.id, content: item.status })),
+});
+```
+
+**2. Handle rowOffset Correctly:**
+
+```typescript
+// If your sheet has a description row after header:
+// Row 1: [Name, Email, Status]        ← Header
+// Row 2: [Enter name, Enter email, ...]  ← Description
+// Row 3: [John, john@example.com, Active]  ← First data row
+
+await sheetClient.updateValuesMultiCells({
+  sheetUrl: SHEET_URL,
+  sheetName: 'Sheet1',
+  cells: [{ row: 0, col: 0, content: 'Updated' }],
+  rowOffset: 1, // Skip the description row
+});
+// This updates row 3 (first data row)
+```
+
+**3. Validate Before Delete:**
+
+```typescript
+// Always confirm before deleting
+const confirmDelete = await getUserConfirmation();
+if (confirmDelete) {
+  await sheetClient.deleteRowSheet({
+    sheetUrl: SHEET_URL,
+    sheetName: 'Users',
+    row: rowIndex,
+  });
+}
+```
+
+---
+
 ## TypeScript Support
 
 This library is written in TypeScript and provides full type definitions.

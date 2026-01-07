@@ -21,7 +21,9 @@
   ],
   "scripts": {
     "build": "rollup -c && tsc --emitDeclarationOnly --outDir dist/types",
-    "prepublishOnly": "npm run build"
+    "pub": "npm run build && npm publish",
+    "check": "tsc --noEmit",
+    "check:watch": "tsc --noEmit --watch"
   },
   "publishConfig": {
     "access": "public"
